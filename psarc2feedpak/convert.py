@@ -457,14 +457,30 @@ def convert_song(song_key, songs, attrs, wems, dds, out_path, out_dir, *,
         if not tools.can_audio:
             raise ConversionError("need " + " and ".join(tools.missing())
                                   + " for audio (put vgmstream-cli in tools/vgmstream/)")
-        log(f"  audio     encoding {_size(len(wems[0]))} wem...")
+        lossless = opt.lossless_audio and tools.can_lossless
+        if opt.lossless_audio and not lossless:
+            log("  audio     ww2ogg + codebooks not found, re-encoding instead")
+
+        def encode(wem, out):
+            """Lossless copy when possible, else re-encode. Returns how."""
+            if lossless:
+                try:
+                    tools.wem_to_ogg_lossless(wem, out, scratch)
+                    return "lossless"
+                except RuntimeError as e:
+                    log(f"  audio     lossless copy failed, re-encoding: "
+                        f"{str(e).splitlines()[0]}")
+            tools.wem_to_ogg(wem, out, scratch, quality=opt.audio_quality)
+            return f"quality {opt.audio_quality}"
+
+        log(f"  audio     {'copying' if lossless else 'encoding'} "
+            f"{_size(len(wems[0]))} wem...")
         ogg = build / "stems" / "full.ogg"
-        tools.wem_to_ogg(wems[0], ogg, scratch, quality=opt.audio_quality)
+        how = encode(wems[0], ogg)
         stems.append({"id": "full", "file": "stems/full.ogg", "default": True})
-        audio_line = f"  audio     full.ogg ({_size(ogg.stat().st_size)})"
+        audio_line = f"  audio     full.ogg ({_size(ogg.stat().st_size)}, {how})"
         if len(wems) > 1:
-            tools.wem_to_ogg(wems[1], build / "preview.ogg", scratch,
-                             quality=opt.audio_quality)
+            encode(wems[1], build / "preview.ogg")
             extras["preview"] = "preview.ogg"
             audio_line += " + preview"
         log(audio_line)

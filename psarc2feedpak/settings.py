@@ -18,6 +18,7 @@ class Options:
     """How packages get built. Defaults match what the tool has always done."""
     name_template: str = "{artist} - {title}"
     audio_quality: int = 5        # libvorbis -q:a, 0 (small) .. 10 (best)
+    lossless_audio: bool = True   # copy the original Vorbis when ww2ogg is available
     include_audio: bool = True
     include_cover: bool = True
     include_phrases: bool = True  # the per-phrase difficulty ladder

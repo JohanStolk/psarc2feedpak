@@ -304,6 +304,7 @@ class App:
         v_keep = tk.BooleanVar(value=o.keep_dir)
         v_audio = tk.BooleanVar(value=o.include_audio)
         v_q = tk.IntVar(value=o.audio_quality)
+        v_lossless = tk.BooleanVar(value=o.lossless_audio)
         v_cover = tk.BooleanVar(value=o.include_cover)
         v_ladder = tk.BooleanVar(value=o.include_phrases)
 
@@ -349,6 +350,16 @@ class App:
             q_spin.config(state="disabled")
         ttk.Label(audio_row, text="0 = smallest, 10 = best, 5 = default",
                   style="Hint.TLabel").pack(side="left", padx=(10, 0))
+        ttk.Checkbutton(body,
+                        text="Copy the original audio losslessly when possible",
+                        variable=v_lossless
+                        ).grid(row=r, column=0, columnspan=2, sticky="w",
+                               padx=(20, 0)); r += 1
+        ttk.Label(body, style="Hint.TLabel",
+                  text="Needs ww2ogg in tools/. The quality setting is then "
+                       "only used as a fallback."
+                  ).grid(row=r, column=0, columnspan=2, sticky="w",
+                         padx=(44, 0)); r += 1
         ttk.Checkbutton(body, text="Cover art", variable=v_cover
                         ).grid(row=r, column=0, columnspan=2, sticky="w"); r += 1
         ttk.Checkbutton(body,
@@ -366,6 +377,7 @@ class App:
             v_keep.set(d.keep_dir)
             v_audio.set(d.include_audio)
             v_q.set(d.audio_quality)
+            v_lossless.set(d.lossless_audio)
             v_cover.set(d.include_cover)
             v_ladder.set(d.include_phrases)
             q_spin.config(state="normal")
@@ -388,6 +400,7 @@ class App:
                 quality = Options().audio_quality
             self.options = Options(
                 name_template=tpl_s, audio_quality=quality,
+                lossless_audio=v_lossless.get(),
                 include_audio=v_audio.get(), include_cover=v_cover.get(),
                 include_phrases=v_ladder.get(), keep_dir=v_keep.get(),
                 overwrite=v_over.get())

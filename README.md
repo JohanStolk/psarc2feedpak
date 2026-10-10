@@ -55,8 +55,13 @@ runs.
 - **Overwrite.** Turn this off to leave songs alone that already have a
   `.feedpak`, which makes re-running a big batch cheap.
 - **Keep the unzipped folder.** Handy when you want to look inside a package.
-- **Audio quality.** Vorbis quality from 0 (smallest) to 10 (best). The
-  default of 5 sounds fine and keeps files reasonable.
+- **Lossless audio.** Rocksmith's audio is already Vorbis, so when
+  [ww2ogg](#lossless-audio) is available the original stream is copied into the
+  package as-is instead of being decoded and re-encoded. Every copy is checked
+  to decode to exactly the same samples as the original. If that check fails,
+  the song is re-encoded at the quality below. On by default.
+- **Audio quality.** Vorbis quality from 0 (smallest) to 10 (best), used when
+  re-encoding. The default of 5 sounds fine and keeps files reasonable.
 - **What goes in.** Audio, cover art and the difficulty ladder can each be
   turned off if you want small, charts-only packages.
 
@@ -77,6 +82,7 @@ ignore the GUI's saved settings, so scripts behave the same everywhere:
 ```
 python -m psarc2feedpak song_p.psarc --template "{title} ({artist})"
 python -m psarc2feedpak song_p.psarc --quality 8
+python -m psarc2feedpak song_p.psarc --reencode              # never copy losslessly
 python -m psarc2feedpak song_p.psarc --no-audio --no-cover   # charts only
 python -m psarc2feedpak song_p.psarc --no-ladder             # full chart only
 python -m psarc2feedpak song_p.psarc --skip-existing
@@ -86,9 +92,29 @@ Running from source, audio needs two external tools on your `PATH` (or drop
 `vgmstream-cli` in `tools/vgmstream/`):
 
 - [vgmstream](https://vgmstream.org/) decodes Wwise `.wem`
-- [ffmpeg](https://ffmpeg.org/) does the OGG encode and DDS→PNG
+- [ffmpeg](https://ffmpeg.org/) does the OGG encode and DDS→PNG. It needs the
+  `libvorbis` encoder: on macOS, Homebrew's `ffmpeg` lacks it, but
+  `ffmpeg-full` has it.
 
 The GUI is `python -m psarc2feedpak.gui`.
+
+### Lossless audio
+
+Copying the original audio needs [ww2ogg](https://github.com/hcs64/ww2ogg)
+plus its `packed_codebooks_aoTuV_603.bin`, either in `tools/` or with
+`ww2ogg` on your `PATH` and the codebooks next to it. Building it takes a
+C++ compiler and nothing else:
+
+```
+git clone https://github.com/hcs64/ww2ogg
+make -C ww2ogg
+cp ww2ogg/ww2ogg ww2ogg/packed_codebooks_aoTuV_603.bin tools/
+```
+
+ww2ogg's own Ogg output has unreliable granule positions (the reason the old
+`revorb` tool exists). `psarc2feedpak/ogg.py` rewrites them from the Vorbis
+block sizes and trims to the `.wem`'s sample count, so no `revorb` is needed.
+The audio packets are copied byte for byte.
 
 ## Troubleshooting
 

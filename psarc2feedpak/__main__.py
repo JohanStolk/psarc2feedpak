@@ -19,7 +19,10 @@ def main():
     ap.add_argument("--quality", type=int, default=Options.audio_quality,
                     metavar="N", choices=range(11),
                     help="Vorbis audio quality, 0 smallest to 10 best "
-                         "(default: %(default)s)")
+                         "(default: %(default)s); only used when re-encoding")
+    ap.add_argument("--reencode", action="store_true",
+                    help="always re-encode the audio instead of copying the "
+                         "original Vorbis losslessly (which needs ww2ogg)")
     ap.add_argument("--no-audio", action="store_true",
                     help="skip audio, charts only")
     ap.add_argument("--no-cover", action="store_true",
@@ -32,6 +35,7 @@ def main():
     opts = Options(
         name_template=args.template,
         audio_quality=args.quality,
+        lossless_audio=not args.reencode,
         include_audio=not args.no_audio,
         include_cover=not args.no_cover,
         include_phrases=not args.no_ladder,
