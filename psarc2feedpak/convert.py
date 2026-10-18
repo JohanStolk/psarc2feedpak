@@ -253,16 +253,33 @@ def _timeline(song):
 
 
 def _tones(song, attrs):
-    if not song.tones:
+    # A part with one fixed tone has no changes but still has its base tone
+    # and gear (definitions); only skip when there's no tone data at all.
+    if not song.tones and not attrs.get("Tones") and not attrs.get("Tone_Base"):
         return None
     letters = "ABCD"
     changes = []
-    for t in song.tones:
+    for t in song.tones or []:
         name = attrs.get(f"Tone_{letters[t.id]}") if t.id < 4 else None
         changes.append({"t": _r(t.time), "name": name or f"tone-{t.id}"})
     tones = {"changes": changes}
     if attrs.get("Tone_Base"):
         tones["base"] = attrs["Tone_Base"]
+    # feedpak-spec §6.9 "legacy opaque" definitions: the raw tone objects (with
+    # their GearList: amp, cabinet, pedals, racks and knob settings) copied
+    # verbatim from the manifest, de-duplicated by Key. Rig Builder maps each
+    # song's gear from these; the core's own converter writes the same field.
+    definitions, seen = [], set()
+    for d in attrs.get("Tones") or []:
+        if not isinstance(d, dict):
+            continue
+        key = d.get("Key") or d.get("Name")
+        if key in seen:
+            continue
+        seen.add(key)
+        definitions.append(d)
+    if definitions:
+        tones["definitions"] = definitions
     return tones
 
 
