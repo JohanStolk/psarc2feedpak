@@ -368,10 +368,16 @@ def convert_song(song_key, songs, attrs, wems, dds, out_path, out_dir, *,
     playable.sort(key=lambda p: _ARR_SORT.get(p[3].lower(), 9))
     meta_attrs = meta_attrs or {}
 
+    def _clean(v):
+        # Chart metadata often carries stray spaces ("AC/DC ", "Rush "), which
+        # split one artist into several in a library and double the space in
+        # the file name. Collapse runs of whitespace and trim.
+        return " ".join(v.split()) if isinstance(v, str) else v
+
     meta = {
-        "title": meta_attrs.get("SongName", song_key),
-        "artist": meta_attrs.get("ArtistName", "Unknown Artist"),
-        "album": meta_attrs.get("AlbumName"),
+        "title": _clean(meta_attrs.get("SongName", song_key)) or song_key,
+        "artist": _clean(meta_attrs.get("ArtistName", "Unknown Artist")) or "Unknown Artist",
+        "album": _clean(meta_attrs.get("AlbumName")),
         "year": meta_attrs.get("SongYear"),
         "duration": float(meta_attrs.get("SongLength")
                           or playable[0][1].metadata.songLength),
